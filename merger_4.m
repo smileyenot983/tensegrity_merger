@@ -11,12 +11,15 @@ cvx_solver Gurobi_2;
 
 % in case separate structures are being generated, in order to avoid generating 2 
 % identical structures for second structure seed = seed+1 
-seed = 16;
+seed = 10;
 
 grid_structure1 = "cube stack";
 grid_structure2 = "cube stack";
+grid_structure3 = "cube stack";
+grid_structure4 = "cube stack";
+grid_structure5 = "cube stack";
 
-foldername = strcat("Merge results. Seed:",string(seed),"Structures: ",grid_structure1,"_",grid_structure2);
+foldername = strcat("Merge results tower. Seed:",string(seed));
 mkdir(foldername);
 
 
@@ -48,13 +51,19 @@ else
     % number of nodes:
     n = 8;
 
-
     % shift direction(shift distance for cylinder = 2*radius)
     shift1 = 0;
     shift2 = 'z';
+    shift3 = 'z';
+    shift4 = 'z';
+    shift5 = 'z';
     
     shift_dist1 = 0;
-    shift_dist2 = 1.25;
+    shift_dist2 = 0.5;
+    shift_dist3 = 1;
+    shift_dist4 = 3;
+    shift_dist5 = 4;
+    
 
 
     % constraints [strut max length, cable max length, projection max length]
@@ -63,6 +72,9 @@ else
 
     constraints_set2 = [false,false,false];
     projection_axis2 = 0;
+    
+    constraints_set3 = [false,false,false];
+    projection_axis3 = 0;
     
     %______________________________________________________________________________
     
@@ -83,6 +95,23 @@ else
     % second structure is shifted      
     sol2 = run_experiment(seed+1,n,true,grid_structure2,shift2,shift_dist2,strut_constraint,cable_constraint,...
                         projection_constraint,projection_axis);
+                    
+    strut_constraint = constraints_set3(1);
+    cable_constraint = constraints_set3(2);
+    projection_constraint = constraints_set3(3);
+    projection_axis = projection_axis3;
+
+    % second structure is shifted      
+    sol3 = run_experiment(seed+1,n,true,grid_structure3,shift3,shift_dist3,strut_constraint,cable_constraint,...
+                        projection_constraint,projection_axis);
+                    
+    % second structure is shifted      
+    sol4 = run_experiment(seed+1,n,true,grid_structure3,shift4,shift_dist4,strut_constraint,cable_constraint,...
+                        projection_constraint,projection_axis);
+                    
+    % second structure is shifted      
+    sol5 = run_experiment(seed+1,n,true,grid_structure3,shift5,shift_dist5,strut_constraint,cable_constraint,...
+                        projection_constraint,projection_axis);
 
                 
 end
@@ -92,30 +121,49 @@ end
 % concatenating cable connectivity into diagonal matrix
 C_1 = sol1.C;
 C_2 = sol2.C;
+C_3 = sol3.C;
+% C_4 = sol4.C;
+% C_5 = sol5.C;
 
-C_bar = zeros(size(C_1,1)+size(C_2,1),size(C_1,2)+size(C_2,2));
+C_bar = zeros(size(C_1,1)+size(C_2,1)+size(C_3,1),size(C_1,2)+size(C_2,2)+size(C_3,2));
+% C_bar = zeros(size(C_1,1)+size(C_2,1)+size(C_3,1)+size(C_4,1)+size(C_5,1),size(C_1,2)+size(C_2,2)+size(C_3,2)+size(C_4,2)+size(C_5,2));
+
 
 C_bar(1:size(C_1,1),1:size(C_1,2)) = C_1;
-C_bar(size(C_1,1)+1:end,size(C_1,2)+1:end) = C_2;
-
+C_bar(size(C_1,1)+1:2*size(C_1,1),size(C_1,2)+1:2*size(C_1,2)) = C_2;
+C_bar(2*size(C_1,1)+1:3*size(C_1,1),2*size(C_1,2)+1:3*size(C_1,2)) = C_3;
+% C_bar(3*size(C_1,1)+1:4*size(C_1,1),3*size(C_1,2)+1:4*size(C_1,2)) = C_4;
+% C_bar(4*size(C_1,1)+1:5*size(C_1,1),4*size(C_1,2)+1:5*size(C_1,2)) = C_5;
 
 % concatenating strut connectivity into diagonal matrix
 R_1 = sol1.R;
 R_2 = sol2.R;
+R_3 = sol3.R;
+% R_4 = sol4.R;
+% R_5 = sol5.R;
 
-R_bar = zeros(size(R_1,1)+size(R_2,1),size(R_1,2)+size(R_2,2));
+R_bar = zeros(size(R_1,1)+size(R_2,1)+size(R_3,1),size(R_1,2)+size(R_2,2)+size(R_3,2));
+% R_bar = zeros(size(R_1,1)+size(R_2,1)+size(R_3,1)+size(R_4,1)+size(R_5,1),size(R_1,2)+size(R_2,2)+size(R_3,2)+size(R_4,2)+size(R_5,2));
                 
-R_bar(1:size(R_1,1),1:size(R_1,2)) = R_1;
-R_bar(size(R_1,1)+1:end,size(R_1,2)+1:end) = R_2;
 
+
+R_bar(1:size(R_1,1),1:size(R_1,2)) = R_1;
+R_bar(size(R_1,1)+1:2*size(R_1,1),size(R_1,2)+1:2*size(R_1,2)) = R_2;
+R_bar(2*size(R_1,1)+1:3*size(R_1,1),2*size(R_1,2)+1:3*size(R_1,2)) = R_3;
+% R_bar(3*size(R_1,1)+1:4*size(R_1,1),3*size(R_1,2)+1:4*size(R_1,2)) = R_4;
+% R_bar(4*size(R_1,1)+1:5*size(R_1,1),4*size(R_1,2)+1:5*size(R_1,2)) = R_5;
 
 % concatenating node coordinates horizontally
 
 p_1 = sol1.points;
 p_2 = sol2.points;
+p_3 = sol3.points;
+% p_4 = sol4.points;
+% p_5 = sol5.points;
 
-p_bar = horzcat(p_1,p_2);
+% p_bar = horzcat(p_1,p_2,p_3,p_4,p_5);
 
+p_bar = horzcat(p_1,p_2,p_3);
 
 %% PART 2: MERGING 2 SEPARATE STRUCTURES INTO SINGLE STRUCTURE
 
@@ -313,7 +361,7 @@ dataname = strcat("merged_","c_constr:",string(cable_constraint),"_","s_constr:"
 
 filename = strcat(foldername,"/",dataname);
 
-save(filename,"sol1","sol2","sol_merg");
+save(filename,"sol1","sol2","sol3","sol_merg");
 
 
 % add image saving

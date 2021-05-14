@@ -40,7 +40,10 @@ function [points] = sphere_grid(radius,n_points,shift)
             disp("Shift in y");
         case 'z'
             points(3,:) = points(3,:) + 2 * max(points(3,:));
-            disp("Shift in z");        
+            disp("Shift in z");   
+        case 'xz'
+            points(1,:) = points(1,:) + 1.5 * max(points(1,:));
+            points(3,:) = points(3,:) + 1.5 * max(points(3,:));
         otherwise
             disp("No shifting");
     end

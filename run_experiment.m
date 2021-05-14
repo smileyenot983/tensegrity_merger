@@ -1,4 +1,4 @@
-function solution = run_experiment(exp_num,n_nodes,random_nodes,grid_structure,shift,strut_constraint,cable_constraint,...
+function solution = run_experiment(exp_num,n_nodes,random_nodes,grid_structure,shift,shift_dist,strut_constraint,cable_constraint,...
     projection_constraint,projection_axis)
 %RUN_EXPERIMENT Summary of this function goes here
 %   Detailed explanation goes here:
@@ -26,7 +26,7 @@ switch grid_structure
     case "cube stack"
         N=3;
         stacks = 2;
-        points = cube_stack_grid(N,stacks,shift);
+        points = cube_stack_grid(N,stacks,shift,shift_dist);
         
         strut_max_length = 4; 
         cable_max_length = 4; 

@@ -11,12 +11,8 @@ cvx_solver Gurobi_2;
 
 % in case separate structures are being generated, in order to avoid generating 2 
 % identical structures for second structure seed = seed+1 
-seed = 16;
-
-grid_structure1 = "cube stack";
-grid_structure2 = "cube stack";
-
-foldername = strcat("Merge results. Seed:",string(seed),"Structures: ",grid_structure1,"_",grid_structure2);
+seed = 7;
+foldername = strcat("Merge results. Seed:",string(seed));
 mkdir(foldername);
 
 
@@ -43,18 +39,15 @@ elseif load_structures == true && load_separate==false
 else
     
     %______________PARAMETERS FOR GENERATING 2 SEPARATE STRUCTURES_________________
-%     grid_structure1 = "sphere";
-%     grid_structure2 = "cylinder";
+    grid_structure1 = "sphere";
+    grid_structure2 = "cylinder";
     % number of nodes:
-    n = 8;
+    n = 10;
 
 
     % shift direction(shift distance for cylinder = 2*radius)
     shift1 = 0;
-    shift2 = 'z';
-    
-    shift_dist1 = 0;
-    shift_dist2 = 1.25;
+    shift2 = 'x';
 
 
     % constraints [strut max length, cable max length, projection max length]
@@ -71,7 +64,7 @@ else
     projection_constraint = constraints_set1(3);
     projection_axis = projection_axis1;
     
-    sol1 = run_experiment(seed,n,true,grid_structure1,shift1,shift_dist1,strut_constraint,cable_constraint,...
+    sol1 = run_experiment(seed,n,true,grid_structure1,shift1,strut_constraint,cable_constraint,...
                     projection_constraint,projection_axis);
 
 
@@ -81,7 +74,7 @@ else
     projection_axis = projection_axis2;
 
     % second structure is shifted      
-    sol2 = run_experiment(seed+1,n,true,grid_structure2,shift2,shift_dist2,strut_constraint,cable_constraint,...
+    sol2 = run_experiment(seed+1,n,true,grid_structure2,shift2,strut_constraint,cable_constraint,...
                         projection_constraint,projection_axis);
 
                 
@@ -192,16 +185,16 @@ projection_constraint = constraints_set_merg(3);
 
 cvx_begin
 
-variable delta_R(new_n, new_n) binary
-variable delta_C(new_n, new_n) binary
+variable delta_R1(new_n, new_n) binary
+variable delta_C1(new_n, new_n) binary
 
 variable f(new_n, new_n)
 variable g(3, m)
 
-minimize(sum(delta_C(:)) + sum(delta_R(:)))
+minimize(sum(delta_C1(:)) + sum(delta_R1(:)))
 
-C = C_bar + delta_C;
-R = R_bar + delta_R;
+C = C_bar + delta_C1 ;
+R = R_bar + delta_R1 ;
 points = p_bar;
 
 subject to
@@ -302,8 +295,8 @@ cvx_end
 
 
 sol_merg.points = p_bar;
-sol_merg.R = R_bar+delta_R;
-sol_merg.C = C_bar+delta_C;
+sol_merg.R = R_bar + delta_R1 ;
+sol_merg.C = C_bar + delta_C1 ;
 
 
 %% SAVING RESULTS
@@ -321,3 +314,96 @@ save(filename,"sol1","sol2","sol_merg");
 % visualize_solution(sol_merg,3,filename,"merged");
 % visualize_solution(sol_merg,3,filename,"merged");
 visualize_2(sol_merg,3,filename,"merged");
+
+
+%% Testing reducing
+
+cvx_clear;
+
+cvx_begin
+
+variable delta_R2(new_n, new_n) binary
+variable delta_C2(new_n, new_n) binary
+
+variable f(new_n, new_n)
+variable g(3, m)
+
+maximize(sum(delta_C2(:)) + sum(delta_R2(:)))
+
+C = C_bar - delta_C2;
+R = R_bar - delta_R2;
+points = p_bar;
+
+subject to
+
+    C == C';
+    R == R';
+
+    sum(C,1) >= 3*ones(1,new_n);
+    
+    diag(C) == zeros(new_n,1);
+    diag(R) == zeros(new_n,1);
+    
+    P = C + R;
+    P(:) <= ones(new_n*new_n,1);
+    
+    
+    for i=1:new_n
+        for j=1:new_n
+            f(i,j) <= big_M * C(i,j); 
+            -f(i,j) <= big_M * R(i,j);
+        end 
+    end
+    
+    g_ext = [g,zeros(3,new_n-m)];
+    
+    
+    for i=1:new_n
+        Dir_t(:,:,i) * f(i,:)' == external_force(:,i) + g_ext(:,i);
+       
+    end
+    
+    for i=1:new_n
+        Dir_t(:,:,i) * f(i,:)' == external_force(:,i);
+       
+    end
+
+
+%     slice part, which is responsible for connection between 2 separate
+%     structures
+%     C_slice = delta_C(1:n,n+1:new_n);
+%     sum(C_slice(:)) >= min_C; 
+%     
+% 
+%     R_slice = delta_R(1:n,n+1:new_n);
+%     sum(R_slice(:)) >= min_R; 
+    
+    
+    
+
+cvx_end
+
+
+sol_merg2.points = p_bar;
+
+sol_merg2.R = sol_merg.R - delta_R2;
+sol_merg2.C = sol_merg.C - delta_C2;
+
+
+
+
+%% SAVING RESULTS
+
+% dataname = strcat("merged_","c_constr:",string(cable_constraint),"_","s_constr:",string(strut_constraint),...
+%     "_","proj_constr:",string(projection_constraint),"_ax:",string(projection_axis),".mat");
+% 
+% filename = strcat(foldername,"/",dataname);
+% 
+% save(filename,"sol1","sol2","sol_merg");
+
+
+% add image saving
+
+% visualize_solution(sol_merg,3,filename,"merged");
+% visualize_solution(sol_merg,3,filename,"merged");
+visualize_solution(sol_merg2,3,filename,"merged");
